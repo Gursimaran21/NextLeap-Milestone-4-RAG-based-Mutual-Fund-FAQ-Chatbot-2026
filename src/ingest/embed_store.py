@@ -3,14 +3,20 @@
 from __future__ import annotations
 
 import os
+import time
 from functools import lru_cache
 from typing import Any
 
 import chromadb
 from chromadb.api.models.Collection import Collection
 from langchain_google_genai import GoogleGenerativeAIEmbeddings
+from tenacity import retry, stop_after_attempt, wait_exponential
 
 from src.config import CHROMA_COLLECTION, CHROMA_PATH, EMBEDDING_MODEL
+
+# Rate limit handling
+BATCH_SIZE = 20
+DELAY_SECONDS = 2
 
 
 @lru_cache(maxsize=1)
@@ -19,7 +25,14 @@ def get_embedding_model() -> GoogleGenerativeAIEmbeddings:
     return GoogleGenerativeAIEmbeddings(
         model=EMBEDDING_MODEL,
         google_api_key=os.getenv("GEMINI_API_KEY"),
+        batch_size=BATCH_SIZE,
     )
+
+
+@retry(wait=wait_exponential(multiplier=1, min=5, max=60), stop=stop_after_attempt(5))
+def safe_embed_documents(encoder: GoogleGenerativeAIEmbeddings, texts: list[str]) -> list[list[float]]:
+    """Embed documents with automatic retry on rate limit (429) errors."""
+    return encoder.embed_documents(texts)
 
 
 def get_chroma_client(path: str | None = None) -> chromadb.PersistentClient:
@@ -81,14 +94,14 @@ def embed_texts(
 ) -> list[list[float]]:
     """Embed a list of texts with Google Gemini; returns list of vectors."""
     encoder = model or get_embedding_model()
-    return encoder.embed_documents(texts)
+    return safe_embed_documents(encoder, texts)
 
 
 def embed_and_store(
     chunks: list[dict[str, Any]],
     *,
     reset: bool = False,
-    batch_size: int = 64,
+    batch_size: int = BATCH_SIZE,
 ) -> int:
     """
     Embed chunks and upsert into ChromaDB.
@@ -101,11 +114,14 @@ def embed_and_store(
     collection = get_collection(reset=reset)
     model = get_embedding_model()
 
-    for start in range(0, len(chunks), batch_size):
+    total = len(chunks)
+    for start in range(0, total, batch_size):
         batch = chunks[start : start + batch_size]
         ids = [chunk["id"] for chunk in batch]
         documents = [chunk["text"] for chunk in batch]
         metadatas = [_chroma_metadata(chunk) for chunk in batch]
+
+        print(f"  Embedding batch {start // batch_size + 1}/{(total - 1) // batch_size + 1} ({len(batch)} chunks)...")
         embeddings = embed_texts(documents, model=model)
 
         collection.upsert(
@@ -114,6 +130,10 @@ def embed_and_store(
             metadatas=metadatas,
             embeddings=embeddings,
         )
+
+        # Pause between batches to respect rate limits
+        if start + batch_size < total:
+            time.sleep(DELAY_SECONDS)
 
     return collection_count(collection)
 
