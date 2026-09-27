@@ -1,0 +1,9 @@
+chromadb
+sentence-transformers
+streamlit
+beautifulsoup4
+requests
+python-dotenv
+openai
+langchain-text-splitters
+lxml
