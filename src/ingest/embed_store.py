@@ -1,36 +1,25 @@
-"""Embed + Store stage: MiniLM embeddings persisted in ChromaDB."""
+"""Embed + Store stage: OpenAI embeddings persisted in ChromaDB."""
 
 from __future__ import annotations
 
+import os
 from functools import lru_cache
 from typing import Any
 
 import chromadb
 from chromadb.api.models.Collection import Collection
-from sentence_transformers import SentenceTransformer
+from langchain_openai import OpenAIEmbeddings
 
 from src.config import CHROMA_COLLECTION, CHROMA_PATH, EMBEDDING_MODEL
-from src.ingest.chunk import chunk_documents
-from src.ingest.load import load_documents
-
-import os
-from langchain_openai import OpenAIEmbeddings
-from langchain_chroma import Chroma  # or your preferred vector store
-
-# Replace SentenceTransformer with OpenAIEmbeddings
-embeddings = OpenAIEmbeddings(
-    model="text-embedding-3-small",
-    api_key=os.getenv("OPENAI_API_KEY")
-)
-
-# Use 'embeddings' in your embed_and_store function instead of the SentenceTransformer instance
 
 
 @lru_cache(maxsize=1)
-def get_embedding_model(model_name: str | None = None) -> SentenceTransformer:
-    """Load (and cache) the sentence-transformers embedding model."""
-    name = model_name or EMBEDDING_MODEL
-    return SentenceTransformer(name)
+def get_embedding_model() -> OpenAIEmbeddings:
+    """Load (and cache) the OpenAI embeddings model."""
+    return OpenAIEmbeddings(
+        model="text-embedding-3-small",
+        api_key=os.getenv("OPENAI_API_KEY"),
+    )
 
 
 def get_chroma_client(path: str | None = None) -> chromadb.PersistentClient:
@@ -88,12 +77,11 @@ def _chroma_metadata(chunk: dict[str, Any]) -> dict[str, str | int]:
 def embed_texts(
     texts: list[str],
     *,
-    model: SentenceTransformer | None = None,
+    model: OpenAIEmbeddings | None = None,
 ) -> list[list[float]]:
-    """Embed a list of texts with MiniLM; returns list of vectors."""
+    """Embed a list of texts with OpenAI; returns list of vectors."""
     encoder = model or get_embedding_model()
-    vectors = encoder.encode(texts, show_progress_bar=len(texts) > 32, normalize_embeddings=True)
-    return [vec.tolist() for vec in vectors]
+    return encoder.embed_documents(texts)
 
 
 def embed_and_store(
@@ -131,6 +119,9 @@ def embed_and_store(
 
 
 if __name__ == "__main__":
+    from src.ingest.chunk import chunk_documents
+    from src.ingest.load import load_documents
+
     print("Load…")
     docs = load_documents()
     print(f"  {len(docs)} documents")
