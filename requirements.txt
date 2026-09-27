@@ -8,3 +8,5 @@ openai
 langchain-text-splitters
 lxml
 langchain-openai
+langchain-community
+langchain-chroma
