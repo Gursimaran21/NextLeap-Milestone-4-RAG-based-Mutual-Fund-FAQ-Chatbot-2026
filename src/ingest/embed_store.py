@@ -13,6 +13,18 @@ from src.config import CHROMA_COLLECTION, CHROMA_PATH, EMBEDDING_MODEL
 from src.ingest.chunk import chunk_documents
 from src.ingest.load import load_documents
 
+import os
+from langchain_openai import OpenAIEmbeddings
+from langchain_chroma import Chroma  # or your preferred vector store
+
+# Replace SentenceTransformer with OpenAIEmbeddings
+embeddings = OpenAIEmbeddings(
+    model="text-embedding-3-small",
+    api_key=os.getenv("OPENAI_API_KEY")
+)
+
+# Use 'embeddings' in your embed_and_store function instead of the SentenceTransformer instance
+
 
 @lru_cache(maxsize=1)
 def get_embedding_model(model_name: str | None = None) -> SentenceTransformer:
