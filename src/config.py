@@ -22,8 +22,8 @@ CHUNK_OVERLAP = 100
 # Retrieval
 TOP_K = 4
 
-# Embeddings (locked)
-EMBEDDING_MODEL = "sentence-transformers/all-MiniLM-L6-v2"
+# Embeddings (Google Gemini)
+EMBEDDING_MODEL = "models/embedding-001"
 
 # Vector store
 CHROMA_COLLECTION = "hdfc_mf_faqs"
@@ -32,3 +32,6 @@ CHROMA_COLLECTION = "hdfc_mf_faqs"
 LLM_API_KEY_ENV = "OPENAI_API_KEY"
 LLM_MODEL = os.getenv("LLM_MODEL", "gpt-4o-mini")
 OPENAI_API_KEY = os.getenv(LLM_API_KEY_ENV, "")
+
+# Gemini embeddings API key
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")

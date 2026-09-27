@@ -2,18 +2,27 @@
 
 from __future__ import annotations
 
+import os
+from functools import lru_cache
 from typing import Any
 
-from src.config import CHROMA_COLLECTION, CHROMA_PATH, TOP_K
-from src.ingest.embed_store import (
-    embed_texts,
-    get_chroma_client,
-    get_embedding_model,
-)
+import chromadb
+from langchain_google_genai import GoogleGenerativeAIEmbeddings
+
+from src.config import CHROMA_COLLECTION, CHROMA_PATH, EMBEDDING_MODEL, TOP_K
 
 
 class IndexMissingError(RuntimeError):
     """Raised when the Chroma collection is missing or empty."""
+
+
+@lru_cache(maxsize=1)
+def _get_embedding_model() -> GoogleGenerativeAIEmbeddings:
+    """Load (and cache) the Google Gemini embeddings model."""
+    return GoogleGenerativeAIEmbeddings(
+        model=EMBEDDING_MODEL,
+        google_api_key=os.getenv("GEMINI_API_KEY"),
+    )
 
 
 def _get_query_collection():
@@ -21,10 +30,10 @@ def _get_query_collection():
     if not CHROMA_PATH.exists():
         raise IndexMissingError(
             f"Chroma path not found: {CHROMA_PATH}. "
-            "Run ingestion first (e.g. python -m src.ingest.embed_store)."
+            "Run ingestion first (e.g. python -m src.ingest.run_ingest)."
         )
 
-    client = get_chroma_client()
+    client = chromadb.PersistentClient(path=str(CHROMA_PATH))
     names = {c.name for c in client.list_collections()}
     if CHROMA_COLLECTION not in names:
         raise IndexMissingError(
@@ -64,8 +73,8 @@ def retrieve(
         raise ValueError("top_k must be >= 1")
 
     collection = _get_query_collection()
-    model = get_embedding_model()
-    query_embedding = embed_texts([text], model=model)[0]
+    model = _get_embedding_model()
+    query_embedding = model.embed_query(text)
 
     query_kwargs: dict[str, Any] = {
         "query_embeddings": [query_embedding],

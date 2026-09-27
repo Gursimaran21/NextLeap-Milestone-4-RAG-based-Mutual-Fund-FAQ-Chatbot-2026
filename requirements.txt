@@ -6,6 +6,8 @@ python-dotenv
 openai
 langchain-text-splitters
 lxml
+langchain-google-genai
 langchain-openai
 langchain-community
 langchain-chroma
+langchain-google-genai
