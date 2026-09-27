@@ -1,5 +1,4 @@
 chromadb
-sentence-transformers
 streamlit
 beautifulsoup4
 requests
