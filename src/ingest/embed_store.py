@@ -1,4 +1,4 @@
-"""Embed + Store stage: Google Gemini embeddings persisted in ChromaDB."""
+"""Embed + Store stage: OpenAI embeddings persisted in ChromaDB."""
 
 from __future__ import annotations
 
@@ -8,18 +8,24 @@ from typing import Any
 
 import chromadb
 from chromadb.api.models.Collection import Collection
+from langchain_openai import OpenAIEmbeddings
 from langchain_google_genai import GoogleGenerativeAIEmbeddings
 
 from src.config import CHROMA_COLLECTION, CHROMA_PATH, EMBEDDING_MODEL
 
 
 @lru_cache(maxsize=1)
-def get_embedding_model() -> GoogleGenerativeAIEmbeddings:
-    """Load (and cache) the Google Gemini embeddings model."""
-    return GoogleGenerativeAIEmbeddings(
-        model=EMBEDDING_MODEL,
-        google_api_key=os.getenv("GEMINI_API_KEY"),
+def get_embedding_model() -> OpenAIEmbeddings:
+    """Load (and cache) the OpenAI embeddings model."""
+    return OpenAIEmbeddings(
+        model="text-embedding-3-small",
+        api_key=os.getenv("OPENAI_API_KEY"),
     )
+
+    embeddings = GoogleGenerativeAIEmbeddings(
+    model="models/text-embedding-004",
+    google_api_key=os.getenv("GEMINI_API_KEY")
+)
 
 
 def get_chroma_client(path: str | None = None) -> chromadb.PersistentClient:
@@ -77,9 +83,9 @@ def _chroma_metadata(chunk: dict[str, Any]) -> dict[str, str | int]:
 def embed_texts(
     texts: list[str],
     *,
-    model: GoogleGenerativeAIEmbeddings | None = None,
+    model: OpenAIEmbeddings | None = None,
 ) -> list[list[float]]:
-    """Embed a list of texts with Google Gemini; returns list of vectors."""
+    """Embed a list of texts with OpenAI; returns list of vectors."""
     encoder = model or get_embedding_model()
     return encoder.embed_documents(texts)
 

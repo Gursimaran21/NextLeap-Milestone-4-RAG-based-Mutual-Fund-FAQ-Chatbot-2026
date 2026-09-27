@@ -23,7 +23,7 @@ CHUNK_OVERLAP = 100
 TOP_K = 4
 
 # Embeddings (Google Gemini)
-EMBEDDING_MODEL = "models/embedding-001"
+EMBEDDING_MODEL = "models/text-embedding-004"
 
 # Vector store
 CHROMA_COLLECTION = "hdfc_mf_faqs"
