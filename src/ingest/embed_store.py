@@ -16,7 +16,7 @@ from src.config import CHROMA_COLLECTION, CHROMA_PATH, EMBEDDING_MODEL
 
 # Rate limit handling
 BATCH_SIZE = 20
-DELAY_SECONDS = 2
+DELAY_SECONDS = 5
 
 
 @lru_cache(maxsize=1)
@@ -29,7 +29,7 @@ def get_embedding_model() -> GoogleGenerativeAIEmbeddings:
     )
 
 
-@retry(wait=wait_exponential(multiplier=1, min=5, max=60), stop=stop_after_attempt(5))
+@retry(wait=wait_exponential(multiplier=2, min=10, max=60), stop=stop_after_attempt(6))
 def safe_embed_documents(encoder: GoogleGenerativeAIEmbeddings, texts: list[str]) -> list[list[float]]:
     """Embed documents with automatic retry on rate limit (429) errors."""
     return encoder.embed_documents(texts)
