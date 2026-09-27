@@ -4,7 +4,18 @@ from __future__ import annotations
 
 import argparse
 import sys
+import os
+from langchain_community.vectorstores import Chroma  # or FAISS / Qdrant / Pinecone
+from langchain_openai import OpenAIEmbeddings
 
+# Initialize OpenAI Embeddings (Lightweight RAM usage, uses API)
+embeddings = OpenAIEmbeddings(
+    model="text-embedding-3-small",
+    api_key=os.getenv("OPENAI_API_KEY")
+)
+
+# Example usage when creating/loading your vector store:
+# vectorstore = Chroma.from_documents(documents, embeddings, persist_directory="./chroma_db")
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Run the full ingestion pipeline.")

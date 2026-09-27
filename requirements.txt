@@ -7,3 +7,4 @@ python-dotenv
 openai
 langchain-text-splitters
 lxml
+langchain-openai
