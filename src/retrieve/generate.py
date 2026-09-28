@@ -9,7 +9,7 @@ from typing import Any
 from openai import APIError, OpenAI
 from tenacity import (
     retry,
-    retry_if_exception_type,
+    retry_if_exception,
     stop_after_attempt,
     wait_exponential,
 )
@@ -79,9 +79,14 @@ def generate_answer(
 
     client = OpenAI(api_key=api_key, base_url=LLM_BASE_URL)
 
-    # Retry with exponential backoff for transient errors (503, 429, etc.)
+    # Retry only on transient errors (503 overloaded, 429 rate limit)
+    # Do NOT retry on 4xx errors (invalid model, auth failure, etc.)
+    def _is_transient_error(exc: APIError) -> bool:
+        status = getattr(exc, 'status_code', None) or 0
+        return status in (429, 503)
+
     @retry(
-        retry=retry_if_exception_type(APIError),
+        retry=retry_if_exception(_is_transient_error),
         wait=wait_exponential(multiplier=2, min=5, max=30),
         stop=stop_after_attempt(3),
         reraise=True,
