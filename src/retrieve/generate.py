@@ -101,12 +101,28 @@ def generate_answer(
 
     try:
         response = _call_llm()
-    except APIError as exc:
+    except APIError:
+        # Fallback: return retrieved facts directly from the database
+        # instead of showing an error message to the user
+        fallback_parts: list[str] = []
+        for chunk in chunks[:3]:
+            text = chunk.get("text", "").strip()
+            if text:
+                fallback_parts.append(text)
+
+        fallback_answer = (
+            "*(AI model temporarily busy — showing direct facts from database)*\n\n"
+            + "\n\n".join(fallback_parts)
+        )
+
+        best = chunks[0]
+        source = best.get("source_url") or best.get("metadata", {}).get("source_url", "")
+        last_updated = best.get("ingested_at") or best.get("metadata", {}).get("ingested_at", "")
+
         return {
-            "answer": "The AI service is temporarily unavailable. "
-                      "Please try again in a few seconds.",
-            "source": None,
-            "last_updated_from_sources": None,
+            "answer": fallback_answer,
+            "source": source or None,
+            "last_updated_from_sources": last_updated or None,
             "refused": False,
         }
 
