@@ -9,7 +9,7 @@ from typing import Any
 from openai import APIError, OpenAI
 from tenacity import (
     retry,
-    retry_if_exception,
+    retry_if_exception_type,
     stop_after_attempt,
     wait_exponential,
 )
