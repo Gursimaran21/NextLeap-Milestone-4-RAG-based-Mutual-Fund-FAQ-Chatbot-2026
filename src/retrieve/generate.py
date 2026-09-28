@@ -3,7 +3,16 @@
 from __future__ import annotations
 
 import os
+import time
 from typing import Any
+
+from openai import APIError, OpenAI
+from tenacity import (
+    retry,
+    retry_if_exception_type,
+    stop_after_attempt,
+    wait_exponential,
+)
 
 from src.config import LLM_API_KEY_ENV, LLM_BASE_URL, LLM_MODEL
 
@@ -68,21 +77,34 @@ def generate_answer(
             f"LLM API key not found. Set {LLM_API_KEY_ENV} in your .env file."
         )
 
-    try:
-        from openai import OpenAI
-    except ImportError as exc:
-        raise RuntimeError(
-            "openai package is required for generation. "
-            "Install it with: pip install openai"
-        ) from exc
-
     client = OpenAI(api_key=api_key, base_url=LLM_BASE_URL)
-    response = client.chat.completions.create(
-        model=LLM_MODEL,
-        messages=messages,
-        temperature=0,
-        max_tokens=300,
+
+    # Retry with exponential backoff for transient errors (503, 429, etc.)
+    @retry(
+        retry=retry_if_exception_type(APIError),
+        wait=wait_exponential(multiplier=2, min=5, max=30),
+        stop=stop_after_attempt(3),
+        reraise=True,
     )
+    def _call_llm():
+        return client.chat.completions.create(
+            model=LLM_MODEL,
+            messages=messages,
+            temperature=0,
+            max_tokens=300,
+        )
+
+    try:
+        response = _call_llm()
+    except APIError as exc:
+        return {
+            "answer": "The AI service is temporarily unavailable. "
+                      "Please try again in a few seconds.",
+            "source": None,
+            "last_updated_from_sources": None,
+            "refused": False,
+        }
+
     answer = response.choices[0].message.content.strip()
 
     best = chunks[0]
