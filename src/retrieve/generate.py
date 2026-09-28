@@ -5,7 +5,7 @@ from __future__ import annotations
 import os
 from typing import Any
 
-from src.config import LLM_API_KEY_ENV, LLM_MODEL
+from src.config import LLM_API_KEY_ENV, LLM_BASE_URL, LLM_MODEL
 
 
 def _build_context(chunks: list[dict[str, Any]]) -> str:
@@ -76,7 +76,7 @@ def generate_answer(
             "Install it with: pip install openai"
         ) from exc
 
-    client = OpenAI(api_key=api_key)
+    client = OpenAI(api_key=api_key, base_url=LLM_BASE_URL)
     response = client.chat.completions.create(
         model=LLM_MODEL,
         messages=messages,
