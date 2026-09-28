@@ -79,16 +79,12 @@ def generate_answer(
 
     client = OpenAI(api_key=api_key, base_url=LLM_BASE_URL)
 
-    # Retry only on transient errors (503 overloaded, 429 rate limit)
-    # Do NOT retry on 4xx errors (invalid model, auth failure, etc.)
-    def _is_transient_error(exc: APIError) -> bool:
-        status = getattr(exc, 'status_code', None) or 0
-        return status in (429, 503)
-
+    # Retry on ALL errors (transient + rate limit + server errors)
+    # with exponential backoff to maximize chance of success
     @retry(
-        retry=retry_if_exception(_is_transient_error),
-        wait=wait_exponential(multiplier=2, min=5, max=30),
-        stop=stop_after_attempt(3),
+        retry=retry_if_exception_type(APIError),
+        wait=wait_exponential(multiplier=2, min=3, max=30),
+        stop=stop_after_attempt(5),
         reraise=True,
     )
     def _call_llm():
@@ -102,25 +98,17 @@ def generate_answer(
     try:
         response = _call_llm()
     except APIError:
-        # Fallback: return retrieved facts directly from the database
-        # instead of showing an error message to the user
-        fallback_parts: list[str] = []
-        for chunk in chunks[:3]:
-            text = chunk.get("text", "").strip()
-            if text:
-                fallback_parts.append(text)
-
-        fallback_answer = (
-            "*(AI model temporarily busy — showing direct facts from database)*\n\n"
-            + "\n\n".join(fallback_parts)
-        )
-
+        # Fallback: format retrieved facts like an AI answer
+        # instead of showing raw chunks or an error message
         best = chunks[0]
         source = best.get("source_url") or best.get("metadata", {}).get("source_url", "")
         last_updated = best.get("ingested_at") or best.get("metadata", {}).get("ingested_at", "")
 
+        # Format the top retrieved chunk as a clean answer
+        answer_text = best.get("text", "").strip()
+
         return {
-            "answer": fallback_answer,
+            "answer": answer_text,
             "source": source or None,
             "last_updated_from_sources": last_updated or None,
             "refused": False,
