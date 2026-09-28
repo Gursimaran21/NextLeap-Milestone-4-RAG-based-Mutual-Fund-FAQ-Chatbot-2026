@@ -6,7 +6,7 @@ __pycache__/
 .pytest_cache/
 .mypy_cache/
 .env
-chroma/
+# chroma/  # Commented out: pre-built vector store is committed to repo
 data/snapshots/*.html
 data/raw/*.txt
 data/chunks/*.jsonl

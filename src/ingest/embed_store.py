@@ -132,6 +132,9 @@ def embed_and_store(
     """
     Embed chunks and upsert into ChromaDB.
 
+    Processes in batches with delays to respect Gemini free-tier rate limits.
+    Uses checkpointing: already-embedded chunk IDs are skipped on re-runs.
+
     Returns the collection count after upsert.
     """
     if not chunks:
@@ -140,20 +143,42 @@ def embed_and_store(
     collection = get_collection(reset=reset)
     model = get_embedding_model()
 
-    for start in range(0, len(chunks), batch_size):
-        batch = chunks[start : start + batch_size]
-        ids = [chunk["id"] for chunk in batch]
+    # Determine which chunks are already stored (for resume support)
+    existing_ids: set[str] = set()
+    try:
+        existing_ids = set(collection.get(ids=None, include=[])["ids"])
+    except Exception:
+        pass
+
+    total = len(chunks)
+    num_batches = (total + batch_size - 1) // batch_size
+
+    for i in range(0, total, batch_size):
+        batch = chunks[i : i + batch_size]
+        batch_num = i // batch_size + 1
+
+        # Skip batches where all chunks are already stored
+        batch_ids = [chunk["id"] for chunk in batch]
+        if all(cid in existing_ids for cid in batch_ids):
+            print(f"  Batch {batch_num}/{num_batches} already stored, skipping...")
+            continue
+
         documents = [chunk["text"] for chunk in batch]
         metadatas = [_chroma_metadata(chunk) for chunk in batch]
 
-        embeddings = embed_texts(documents, model=model)
+        print(f"  Embedding batch {batch_num}/{num_batches} ({len(batch)} chunks)...")
+        embeddings = safe_embed_documents(model, documents)
 
         collection.upsert(
-            ids=ids,
+            ids=batch_ids,
             documents=documents,
             metadatas=metadatas,
             embeddings=embeddings,
         )
+
+        # Pause between batches to stay within Gemini free-tier rate limits
+        if i + batch_size < total:
+            time.sleep(DELAY_SECONDS)
 
     return collection_count(collection)
 
