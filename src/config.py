@@ -20,14 +20,14 @@ SOURCES_CSV = DATA_DIR / "sources.csv"
 CHROMA_PATH = PROJECT_ROOT / "chroma"
 
 # Chunking (architecture §10)
-CHUNK_SIZE = 600
-CHUNK_OVERLAP = 100
+CHUNK_SIZE = 400
+CHUNK_OVERLAP = 80
 
 # Retrieval
-TOP_K = 4
+TOP_K = 8
 
-# Embeddings (Google Gemini)
-EMBEDDING_MODEL = "gemini-embedding-001"
+# Embeddings (local sentence-transformers — no rate limits)
+EMBEDDING_MODEL = "sentence-transformers/all-MiniLM-L6-v2"
 
 # Vector store
 CHROMA_COLLECTION = "hdfc_mf_faqs"

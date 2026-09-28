@@ -7,7 +7,7 @@ from functools import lru_cache
 from typing import Any
 
 import chromadb
-from langchain_google_genai import GoogleGenerativeAIEmbeddings
+from langchain_community.embeddings import HuggingFaceEmbeddings
 
 from src.config import CHROMA_COLLECTION, CHROMA_PATH, EMBEDDING_MODEL, TOP_K
 
@@ -17,12 +17,9 @@ class IndexMissingError(RuntimeError):
 
 
 @lru_cache(maxsize=1)
-def _get_embedding_model() -> GoogleGenerativeAIEmbeddings:
-    """Load (and cache) the Google Gemini embeddings model."""
-    return GoogleGenerativeAIEmbeddings(
-        model=EMBEDDING_MODEL,
-        google_api_key=os.getenv("GEMINI_API_KEY"),
-    )
+def _get_embedding_model() -> HuggingFaceEmbeddings:
+    """Load (and cache) the local sentence-transformers embeddings model."""
+    return HuggingFaceEmbeddings(model_name=EMBEDDING_MODEL)
 
 
 def _get_query_collection():

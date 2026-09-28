@@ -3,39 +3,27 @@
 from __future__ import annotations
 
 import os
-import time
 from functools import lru_cache
 from typing import Any
 
 import chromadb
 from chromadb.api.models.Collection import Collection
-from langchain_google_genai import GoogleGenerativeAIEmbeddings
-from langchain_google_genai._common import GoogleGenerativeAIError
-from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_exponential
+from langchain_community.embeddings import HuggingFaceEmbeddings
 
 from src.config import CHROMA_COLLECTION, CHROMA_PATH, EMBEDDING_MODEL
 
-# Rate limit handling
+# Local embeddings — no rate limits needed
 BATCH_SIZE = 20
-DELAY_SECONDS = 6
 
 
 @lru_cache(maxsize=1)
-def get_embedding_model() -> GoogleGenerativeAIEmbeddings:
-    """Load (and cache) the Google Gemini embeddings model."""
-    return GoogleGenerativeAIEmbeddings(
-        model=EMBEDDING_MODEL,
-        google_api_key=os.getenv("GEMINI_API_KEY"),
-    )
+def get_embedding_model() -> HuggingFaceEmbeddings:
+    """Load (and cache) the local sentence-transformers embeddings model."""
+    return HuggingFaceEmbeddings(model_name=EMBEDDING_MODEL)
 
 
-@retry(
-    retry=retry_if_exception_type((GoogleGenerativeAIError, Exception)),
-    wait=wait_exponential(multiplier=2, min=10, max=60),
-    stop=stop_after_attempt(5),
-)
-def safe_embed_documents(encoder: GoogleGenerativeAIEmbeddings, texts: list[str]) -> list[list[float]]:
-    """Embed documents with automatic retry on rate limit (429) errors."""
+def safe_embed_documents(encoder: HuggingFaceEmbeddings, texts: list[str]) -> list[list[float]]:
+    """Embed documents using the local model (no API rate limits)."""
     return encoder.embed_documents(texts)
 
 
@@ -176,9 +164,7 @@ def embed_and_store(
             embeddings=embeddings,
         )
 
-        # Pause between batches to stay within Gemini free-tier rate limits
-        if i + batch_size < total:
-            time.sleep(DELAY_SECONDS)
+        # No delay needed — local embeddings have no rate limits
 
     return collection_count(collection)
 
