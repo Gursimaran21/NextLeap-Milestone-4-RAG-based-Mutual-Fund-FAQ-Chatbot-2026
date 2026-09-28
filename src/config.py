@@ -34,7 +34,7 @@ CHROMA_COLLECTION = "hdfc_mf_faqs"
 
 # LLM (Google Gemini via OpenAI-compatible endpoint)
 LLM_API_KEY_ENV = "GEMINI_API_KEY"
-LLM_MODEL = os.getenv("LLM_MODEL", "gemini-3.8-flash")
+LLM_MODEL = os.getenv("LLM_MODEL", "gemini-2.0-flash")
 LLM_BASE_URL = "https://generativelanguage.googleapis.com/v1beta/openai/"
 
 # Gemini embeddings API key
