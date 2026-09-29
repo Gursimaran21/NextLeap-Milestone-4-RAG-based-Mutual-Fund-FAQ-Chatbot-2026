@@ -31,6 +31,8 @@ SCHEME_FACTS: dict[str, dict[str, str]] = {
         "Exit load": "1% if redeemed within 1 year",
         "Category": "Large Cap",
     },
+    # Note: "HDFC Top 100 Fund" is an alias for "HDFC Large Cap Fund"
+    # Facts are stored under the canonical name above
     "HDFC Equity Fund Direct Growth": {
         "Lock-in period": "None (open-ended scheme)",
         "Exit load": "1% if redeemed within 1 year",

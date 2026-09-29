@@ -22,6 +22,7 @@ KNOWN_SCHEMES = [
 SCHEME_ALIASES = {
     # HDFC Large Cap Fund aliases
     "hdfc top 100 fund": "HDFC Large Cap Fund Direct Growth",
+    "hdfc top 100 fund direct growth": "HDFC Large Cap Fund Direct Growth",
     "hdfc top 100": "HDFC Large Cap Fund Direct Growth",
     "hdfc large cap fund": "HDFC Large Cap Fund Direct Growth",
     "hdfc large cap": "HDFC Large Cap Fund Direct Growth",
