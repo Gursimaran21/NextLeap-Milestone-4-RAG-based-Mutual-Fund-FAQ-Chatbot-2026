@@ -26,8 +26,8 @@ CHUNK_OVERLAP = 80
 # Retrieval
 TOP_K = 8
 
-# Embeddings (local sentence-transformers — no rate limits)
-EMBEDDING_MODEL = "sentence-transformers/all-MiniLM-L6-v2"
+# Embeddings (ChromaDB built-in ONNX MiniLM — lightweight, no rate limits)
+EMBEDDING_MODEL = "onnx-MiniLM"
 
 # Vector store
 CHROMA_COLLECTION = "hdfc_mf_faqs"

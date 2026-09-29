@@ -7,9 +7,9 @@ from functools import lru_cache
 from typing import Any
 
 import chromadb
-from langchain_community.embeddings import HuggingFaceEmbeddings
+from chromadb.utils import embedding_functions
 
-from src.config import CHROMA_COLLECTION, CHROMA_PATH, EMBEDDING_MODEL, TOP_K
+from src.config import CHROMA_COLLECTION, CHROMA_PATH, TOP_K
 
 
 class IndexMissingError(RuntimeError):
@@ -17,9 +17,9 @@ class IndexMissingError(RuntimeError):
 
 
 @lru_cache(maxsize=1)
-def _get_embedding_model() -> HuggingFaceEmbeddings:
-    """Load (and cache) the local sentence-transformers embeddings model."""
-    return HuggingFaceEmbeddings(model_name=EMBEDDING_MODEL)
+def _get_embedding_model():
+    """Load (and cache) ChromaDB's ONNX MiniLM embedding function (lightweight)."""
+    return embedding_functions.DefaultEmbeddingFunction()
 
 
 def _get_query_collection():

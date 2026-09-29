@@ -15,6 +15,12 @@ if str(_PROJECT_ROOT) not in sys.path:
 from src.retrieve.orchestrator import answer_question
 from src.retrieve.retriever import IndexMissingError
 
+# --- Health check (for Render) --------------------------------------------------
+
+if "health" in st.query_params:
+    st.write("OK")
+    st.stop()
+
 # --- UI constants ---------------------------------------------------------------
 
 DISCLAIMER = (

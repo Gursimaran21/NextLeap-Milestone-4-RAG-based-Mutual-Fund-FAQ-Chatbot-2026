@@ -2,29 +2,28 @@
 
 from __future__ import annotations
 
-import os
 from functools import lru_cache
 from typing import Any
 
 import chromadb
 from chromadb.api.models.Collection import Collection
-from langchain_community.embeddings import HuggingFaceEmbeddings
+from chromadb.utils import embedding_functions
 
-from src.config import CHROMA_COLLECTION, CHROMA_PATH, EMBEDDING_MODEL
+from src.config import CHROMA_COLLECTION, CHROMA_PATH
 
 # Local embeddings — no rate limits needed
 BATCH_SIZE = 20
 
 
 @lru_cache(maxsize=1)
-def get_embedding_model() -> HuggingFaceEmbeddings:
-    """Load (and cache) the local sentence-transformers embeddings model."""
-    return HuggingFaceEmbeddings(model_name=EMBEDDING_MODEL)
+def get_embedding_model():
+    """Load (and cache) ChromaDB's ONNX MiniLM embedding function (lightweight)."""
+    return embedding_functions.DefaultEmbeddingFunction()
 
 
-def safe_embed_documents(encoder: HuggingFaceEmbeddings, texts: list[str]) -> list[list[float]]:
+def safe_embed_documents(encoder, texts: list[str]) -> list[list[float]]:
     """Embed documents using the local model (no API rate limits)."""
-    return encoder.embed_documents(texts)
+    return encoder(texts)
 
 
 def get_chroma_client(path: str | None = None) -> chromadb.PersistentClient:
@@ -82,7 +81,7 @@ def _chroma_metadata(chunk: dict[str, Any]) -> dict[str, str | int]:
 def embed_texts(
     texts: list[str],
     *,
-    model: GoogleGenerativeAIEmbeddings | None = None,
+    model=None,
 ) -> list[list[float]]:
     """
     Embed a list of texts with Google Gemini in batches.
@@ -104,9 +103,7 @@ def embed_texts(
         batch_embeddings = safe_embed_documents(encoder, batch)
         all_embeddings.extend(batch_embeddings)
 
-        # Pause between batches to stay within rate limits
-        if i + BATCH_SIZE < total:
-            time.sleep(DELAY_SECONDS)
+        # No delay needed — local embeddings have no rate limits
 
     return all_embeddings
 
