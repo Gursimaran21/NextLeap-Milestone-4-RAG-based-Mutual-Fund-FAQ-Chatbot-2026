@@ -32,6 +32,8 @@ def _build_prompt(question: str, context: str) -> list[dict[str, str]]:
     system = (
         "You are a factual assistant for HDFC mutual fund schemes. "
         "Answer ONLY using the provided context. Never invent numbers or facts. "
+        "If the context contains a Q&A pair (formatted as 'Q: ... A: ...'), "
+        "use that answer directly. "
         "If the context does not contain the answer, say "
         '"I could not find this in the available sources." '
         "Keep your answer to at most 3 sentences. "
