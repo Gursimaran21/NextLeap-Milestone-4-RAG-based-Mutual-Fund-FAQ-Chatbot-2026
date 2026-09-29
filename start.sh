@@ -13,5 +13,10 @@ else
   echo "Chroma vector store found. Skipping ingestion."
 fi
 
+# Warm up: load embedding model and verify vector store
+# This prevents cold-start failures on Render free tier
+echo "Warming up embedding model..."
+python warmup.py
+
 echo "Starting Streamlit..."
 exec streamlit run src/app/ui.py --server.port $PORT --server.address 0.0.0.0 --server.headless true
