@@ -1,23 +1,25 @@
 # HDFC Mutual Fund FAQ Chatbot
 
-A **facts-only RAG chatbot** that answers factual questions about HDFC mutual fund schemes using a fixed corpus of 5 public Groww pages. Every answer cites one source URL. Investment advice and performance predictions are refused.
+A **facts-only RAG chatbot** that answers factual questions about HDFC mutual fund schemes using a fixed corpus of 6 public Groww pages plus a procedural FAQ knowledge base. Every answer cites one source URL. Investment advice and performance predictions are refused.
 
 ## Features
 
 - **Retrieval-Augmented Generation (RAG)** pipeline with visible stages
 - **Facts-only answers** (max 3 sentences) with one citation per response
 - **Guardrails** that refuse advice, performance comparisons, and PII
-- **Conversational memory** (last 10 messages) for follow-up questions
+- **Conversational memory** (last 4 messages) for follow-up questions
 - **Streamlit UI** with welcome message, disclaimer, and 3 example questions
-- **ChromaDB** local vector store with MiniLM embeddings
+- **ChromaDB** local vector store with MiniLM embeddings (no API rate limits)
+- **FAQ knowledge base** for procedural queries (statements, taxation, etc.)
+- **Graceful fallback** — always returns an answer, never shows error messages
 
 ## Tech Stack
 
 | Layer | Technology |
 |-------|------------|
-| Embeddings | `sentence-transformers/all-MiniLM-L6-v2` |
-| Vector DB | ChromaDB |
-| LLM | OpenAI-compatible API (default: `gpt-4o-mini`) |
+| Embeddings | `sentence-transformers/all-MiniLM-L6-v2` (local, no API limits) |
+| Vector DB | ChromaDB (pre-built, committed to repo) |
+| LLM | Google Gemini via OpenAI-compatible API (`gemini-3.5-flash-lite`) |
 | UI | Streamlit |
 | Ingestion | Python (BeautifulSoup + requests) |
 
@@ -27,23 +29,25 @@ A **facts-only RAG chatbot** that answers factual questions about HDFC mutual fu
 27-NextLeap-2026/
 ├── docs/                  # PRD, architecture, implementation guide
 ├── data/
-│   ├── sources.csv        # 5 HDFC scheme URLs
+│   ├── sources.csv        # 6 HDFC scheme URLs
+│   ├── faq.csv            # Procedural Q&A (statements, tax, etc.)
 │   └── snapshots/         # Offline page snapshots (gitignored)
-├── chroma/                # Vector store (gitignored)
+├── chroma/                # Pre-built vector store (committed to repo)
 ├── src/
 │   ├── ingest/            # Load → Chunk → Embed → Store
 │   │   ├── load.py
-│   │   ├── chunk.py
+│   │   ├── chunk.py       # Includes structured fact extraction
 │   │   ├── embed_store.py
 │   │   └── run_ingest.py   # CLI entry
 │   ├── retrieve/          # Runtime pipeline
 │   │   ├── retriever.py
 │   │   ├── guardrails.py
-│   │   ├── generate.py
+│   │   ├── generate.py    # LLM + fallback logic
 │   │   └── orchestrator.py
 │   ├── app/
 │   │   └── ui.py          # Streamlit UI
 │   └── config.py          # Shared config
+├── warmup.py              # Pre-load embedding model (cold-start fix)
 ├── render.yaml            # Render deployment config
 ├── start.sh               # Startup script for Render
 └── requirements.txt
@@ -72,17 +76,19 @@ pip install -r requirements.txt
 Create a `.env` file in the project root:
 
 ```env
-OPENAI_API_KEY=sk-your-key-here
-LLM_MODEL=gpt-4o-mini
+GEMINI_API_KEY=your-gemini-api-key-here
+LLM_MODEL=gemini-3.5-flash-lite
 ```
 
-### 4. Run ingestion
+Get a free Gemini API key at [Google AI Studio](https://aistudio.google.com/apikey).
+
+### 4. Run ingestion (optional — pre-built index is committed)
 
 ```bash
 python -m src.ingest.run_ingest --reset
 ```
 
-This fetches (or reads snapshots of) the 5 Groww pages, chunks them, embeds with MiniLM, and stores in ChromaDB.
+This fetches (or reads snapshots of) the 6 Groww pages, chunks them, embeds with MiniLM, and stores in ChromaDB. The pre-built `chroma/` directory is already committed to the repo, so this step is only needed if you want to refresh the data.
 
 ### 5. Launch the app
 
@@ -98,7 +104,7 @@ Open `http://localhost:8501` in your browser.
 2. Go to [render.com](https://render.com) → New → Web Service
 3. Connect your repo
 4. Render auto-detects `render.yaml`
-5. Add `OPENAI_API_KEY` in the dashboard
+5. Add `GEMINI_API_KEY` in the dashboard
 6. Deploy
 
 The app will be live at `https://hdfc-mf-faq-chatbot.onrender.com`.
@@ -111,20 +117,27 @@ Load → Chunk → Embed → Store → Retrieve → Generate → Cite
 
 | Stage | Module | Description |
 |-------|--------|-------------|
-| Load | `src/ingest/load.py` | Fetch/read 5 Groww pages |
-| Chunk | `src/ingest/chunk.py` | RecursiveCharacterTextSplitter (600 chars, 100 overlap) |
-| Embed | `src/ingest/embed_store.py` | MiniLM embeddings |
+| Load | `src/ingest/load.py` | Fetch/read 6 Groww pages |
+| Chunk | `src/ingest/chunk.py` | RecursiveCharacterTextSplitter (400 chars, 80 overlap) + structured fact extraction |
+| Embed | `src/ingest/embed_store.py` | MiniLM embeddings (local, no API limits) |
 | Store | `src/ingest/embed_store.py` | ChromaDB persistent collection |
-| Retrieve | `src/retrieve/retriever.py` | Top-k similarity search |
+| Retrieve | `src/retrieve/retriever.py` | Top-k similarity search (k=8) |
 | Guardrails | `src/retrieve/guardrails.py` | Block advice, PII, performance |
-| Generate | `src/retrieve/generate.py` | Grounded LLM answer + citation |
+| Generate | `src/retrieve/generate.py` | Grounded LLM answer + citation + fallback |
 
 ## Sample Questions
 
 **Factual (will answer):**
-- "What is the expense ratio of HDFC Large Cap Fund Direct Growth?"
+- "What is the expense ratio of HDFC Small Cap Fund Direct Growth?"
 - "What is the lock-in period for HDFC ELSS Tax Saver?"
-- "What is the exit load on HDFC Small Cap Fund Direct Growth?"
+- "What is the exit load on HDFC Top 100 Fund Direct Growth?"
+- "What is the minimum SIP amount for HDFC Flexi Cap Fund?"
+- "What is the benchmark index for HDFC Mid Cap Fund Direct Growth?"
+
+**Procedural (FAQ):**
+- "How to download capital-gains statement?"
+- "How to download account statement?"
+- "How are mutual fund returns taxed?"
 
 **Refused (advice/PII/performance):**
 - "Should I buy HDFC Small Cap?"
@@ -133,10 +146,10 @@ Load → Chunk → Embed → Store → Retrieve → Generate → Cite
 
 ## Known Limitations
 
-- Only 5 HDFC Direct-Growth schemes are covered
+- Only 6 HDFC Direct-Growth schemes are covered
 - No investment advice, suitability analysis, or return predictions
-- Requires an OpenAI-compatible API key for generation
-- ChromaDB is local; the index is rebuilt on each deploy
+- Requires a Gemini API key for generation (free tier available)
+- ChromaDB is local; the pre-built index is committed to the repo
 - Snapshots may become outdated; verify on official sources
 
 ## License
