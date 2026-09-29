@@ -71,7 +71,8 @@ def retrieve(
 
     collection = _get_query_collection()
     model = _get_embedding_model()
-    query_embedding = model.embed_query(text)
+    # DefaultEmbeddingFunction returns [[floats]] — extract the single vector
+    query_embedding = model([text])[0]
 
     query_kwargs: dict[str, Any] = {
         "query_embeddings": [query_embedding],
