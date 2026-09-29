@@ -43,7 +43,8 @@ WELCOME = (
 INGEST_CMD = "python -m src.ingest.run_ingest --reset"
 
 # Conversation memory window (number of messages to keep)
-MEMORY_WINDOW = 10
+# Kept small to ensure FAQ chunks stay within LLM context window
+MEMORY_WINDOW = 4
 
 
 # --- Streamlit app --------------------------------------------------------------
