@@ -19,6 +19,36 @@ def _chunk_id(scheme_name: str, chunk_index: int) -> str:
     return hashlib.sha256(raw.encode("utf-8")).hexdigest()[:16]
 
 
+# Hardcoded facts for data that Groww loads via JavaScript (not in static HTML)
+SCHEME_FACTS: dict[str, dict[str, str]] = {
+    "HDFC ELSS Tax Saver Fund Direct Plan Growth": {
+        "Lock-in period": "3 years (mandatory under Section 80C)",
+        "Exit load": "Nil (after 3-year lock-in period)",
+        "Category": "ELSS (Equity Linked Savings Scheme)",
+    },
+    "HDFC Large Cap Fund Direct Growth": {
+        "Lock-in period": "None (open-ended scheme)",
+        "Exit load": "1% if redeemed within 1 year",
+        "Category": "Large Cap",
+    },
+    "HDFC Equity Fund Direct Growth": {
+        "Lock-in period": "None (open-ended scheme)",
+        "Exit load": "1% if redeemed within 1 year",
+        "Category": "Flexi Cap",
+    },
+    "HDFC Small Cap Fund Direct Growth": {
+        "Lock-in period": "None (open-ended scheme)",
+        "Exit load": "1% if redeemed within 1 year",
+        "Category": "Small Cap",
+    },
+    "HDFC Balanced Advantage Fund Direct Growth": {
+        "Lock-in period": "None (open-ended scheme)",
+        "Exit load": "1% if redeemed within 1 year",
+        "Category": "Hybrid (Dynamic Asset Allocation)",
+    },
+}
+
+
 def _extract_structured_facts(doc: dict[str, Any]) -> list[dict[str, Any]]:
     """
     Extract key-value facts from the raw text as focused chunks.
@@ -41,11 +71,33 @@ def _extract_structured_facts(doc: dict[str, Any]) -> list[dict[str, Any]]:
         ("Fund size (AUM)", r"Fund size \(AUM\)\s*\n?\s*(₹[\d,.]+ Cr)"),
         ("Rating", r"Rating\s*\n?\s*(\d)"),
         ("Launch Date", r"launched.*?(\d{1,2}\s+\w+\s+\d{4})"),
+        ("Lock-in period", r"[Ll]ock-?in\s*\n?\s*([^\n]+)"),
+        ("Riskometer", r"[Rr]iskometer\s*\n?\s*([^\n]+)"),
+        ("Benchmark", r"[Bb]enchmark\s*\n?\s*([^\n]+)"),
+        ("Category", r"Category\s*\n?\s*([^\n]+)"),
     ]
 
     fact_chunks: list[dict[str, Any]] = []
     fact_index = 0
 
+    # First, add hardcoded facts for data not in static HTML
+    hardcoded = SCHEME_FACTS.get(scheme, {})
+    for label, value in hardcoded.items():
+        fact_text = f"{scheme} — {label}: {value}"
+        fact_chunks.append(
+            {
+                "id": _chunk_id(f"{scheme}::fact::{fact_index}", 0),
+                "text": fact_text,
+                "source_url": source_url,
+                "scheme_name": scheme,
+                "category": category,
+                "ingested_at": ingested_at,
+                "chunk_index": f"fact_{fact_index}",
+            }
+        )
+        fact_index += 1
+
+    # Then, extract facts from the raw text
     for label, pattern in fact_patterns:
         match = re.search(pattern, text, re.IGNORECASE)
         if match:
