@@ -69,12 +69,18 @@ def collection_count(
 
 def _chroma_metadata(chunk: dict[str, Any]) -> dict[str, str | int]:
     """Chroma-safe metadata (str/int/float/bool only)."""
+    chunk_index = chunk["chunk_index"]
+    # Fact chunks use string indices like "fact_0", regular chunks use ints
+    if isinstance(chunk_index, int):
+        idx_value: str | int = chunk_index
+    else:
+        idx_value = str(chunk_index)
     return {
         "source_url": str(chunk["source_url"]),
         "scheme_name": str(chunk["scheme_name"]),
         "category": str(chunk["category"]),
         "ingested_at": str(chunk["ingested_at"]),
-        "chunk_index": int(chunk["chunk_index"]),
+        "chunk_index": idx_value,
     }
 
 

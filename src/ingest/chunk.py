@@ -1,8 +1,9 @@
-"""Chunk stage: recursive character splitting of loaded documents."""
+"""Chunk stage: recursive character splitting + structured fact extraction."""
 
 from __future__ import annotations
 
 import hashlib
+import re
 from collections import defaultdict
 from typing import Any
 
@@ -18,6 +19,54 @@ def _chunk_id(scheme_name: str, chunk_index: int) -> str:
     return hashlib.sha256(raw.encode("utf-8")).hexdigest()[:16]
 
 
+def _extract_structured_facts(doc: dict[str, Any]) -> list[dict[str, Any]]:
+    """
+    Extract key-value facts from the raw text as focused chunks.
+
+    This ensures that specific facts like "Expense ratio: 1.03%" are
+    individually retrievable instead of being buried in large mixed chunks.
+    """
+    text = doc["text"]
+    scheme = doc["scheme_name"]
+    source_url = doc["source_url"]
+    category = doc["category"]
+    ingested_at = doc["ingested_at"]
+
+    # Key facts to extract with their labels
+    fact_patterns = [
+        ("Expense ratio", r"Expense ratio\s*\n?\s*([\d.]+%)"),
+        ("Exit load", r"Exit load\s*\n?\s*([^\n]+)"),
+        ("Minimum SIP", r"Min\.? for SIP\s*\n?\s*(₹[\d,]+)"),
+        ("Minimum Lumpsum", r"Min\.? Lumpsum\s*\n?\s*(₹[\d,]+)"),
+        ("Fund size (AUM)", r"Fund size \(AUM\)\s*\n?\s*(₹[\d,.]+ Cr)"),
+        ("Rating", r"Rating\s*\n?\s*(\d)"),
+        ("Launch Date", r"launched.*?(\d{1,2}\s+\w+\s+\d{4})"),
+    ]
+
+    fact_chunks: list[dict[str, Any]] = []
+    fact_index = 0
+
+    for label, pattern in fact_patterns:
+        match = re.search(pattern, text, re.IGNORECASE)
+        if match:
+            value = match.group(1).strip()
+            fact_text = f"{scheme} — {label}: {value}"
+            fact_chunks.append(
+                {
+                    "id": _chunk_id(f"{scheme}::fact::{fact_index}", 0),
+                    "text": fact_text,
+                    "source_url": source_url,
+                    "scheme_name": scheme,
+                    "category": category,
+                    "ingested_at": ingested_at,
+                    "chunk_index": f"fact_{fact_index}",
+                }
+            )
+            fact_index += 1
+
+    return fact_chunks
+
+
 def chunk_documents(
     documents: list[dict[str, Any]] | None = None,
     *,
@@ -25,7 +74,7 @@ def chunk_documents(
     chunk_overlap: int | None = None,
 ) -> list[dict[str, Any]]:
     """
-    Split documents into retrieval chunks.
+    Split documents into retrieval chunks + extract structured facts.
 
     Each chunk: {id, text, source_url, scheme_name, category, ingested_at, chunk_index}
     """
@@ -40,6 +89,11 @@ def chunk_documents(
 
     chunks: list[dict[str, Any]] = []
     for doc in docs:
+        # Add structured fact chunks first (these are small and focused)
+        fact_chunks = _extract_structured_facts(doc)
+        chunks.extend(fact_chunks)
+
+        # Add regular text chunks
         pieces = splitter.split_text(doc["text"])
         for index, piece in enumerate(pieces):
             text = piece.strip()
