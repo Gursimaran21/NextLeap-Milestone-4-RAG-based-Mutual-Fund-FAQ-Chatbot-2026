@@ -18,13 +18,29 @@ from src.config import LLM_API_KEY_ENV, LLM_BASE_URL, LLM_MODEL
 
 
 def _build_context(chunks: list[dict[str, Any]]) -> str:
-    """Build a context string from retrieved chunks."""
-    parts: list[str] = []
+    """Build a context string from retrieved chunks.
+
+    FAQ chunks (Q&A format) are prioritized and placed first,
+    followed by regular chunks. This ensures the LLM sees the
+    FAQ answer even if it was ranked lower by similarity.
+    """
+    # Separate FAQ chunks (Q&A format) from regular chunks
+    faq_parts: list[str] = []
+    regular_parts: list[str] = []
+
     for i, chunk in enumerate(chunks, start=1):
         text = chunk.get("text", "").strip()
-        if text:
-            parts.append(f"[{i}] {text}")
-    return "\n\n".join(parts)
+        if not text:
+            continue
+        # FAQ chunks have "Q:" and "A:" format
+        if text.startswith("Q:") and "\nA:" in text:
+            faq_parts.append(f"[FAQ {i}] {text}")
+        else:
+            regular_parts.append(f"[{i}] {text}")
+
+    # FAQ chunks first, then regular chunks
+    all_parts = faq_parts + regular_parts
+    return "\n\n".join(all_parts)
 
 
 def _build_prompt(question: str, context: str) -> list[dict[str, str]]:
