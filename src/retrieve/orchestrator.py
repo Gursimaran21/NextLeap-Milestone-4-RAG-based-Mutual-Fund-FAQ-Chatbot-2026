@@ -18,12 +18,43 @@ KNOWN_SCHEMES = [
     "HDFC Balanced Advantage Fund Direct Growth",
 ]
 
+# Alias mapping: common/alternative names -> official scheme name
+SCHEME_ALIASES = {
+    # HDFC Large Cap Fund aliases
+    "hdfc top 100 fund": "HDFC Large Cap Fund Direct Growth",
+    "hdfc top 100": "HDFC Large Cap Fund Direct Growth",
+    "hdfc large cap fund": "HDFC Large Cap Fund Direct Growth",
+    "hdfc large cap": "HDFC Large Cap Fund Direct Growth",
+    # HDFC Equity Fund aliases
+    "hdfc equity fund": "HDFC Equity Fund Direct Growth",
+    "hdfc equity": "HDFC Equity Fund Direct Growth",
+    "hdfc flexi cap fund": "HDFC Equity Fund Direct Growth",
+    "hdfc flexi cap": "HDFC Equity Fund Direct Growth",
+    # HDFC ELSS Tax Saver aliases
+    "hdfc elss tax saver": "HDFC ELSS Tax Saver Fund Direct Plan Growth",
+    "hdfc elss": "HDFC ELSS Tax Saver Fund Direct Plan Growth",
+    "hdfc tax saver": "HDFC ELSS Tax Saver Fund Direct Plan Growth",
+    # HDFC Small Cap Fund aliases
+    "hdfc small cap fund": "HDFC Small Cap Fund Direct Growth",
+    "hdfc small cap": "HDFC Small Cap Fund Direct Growth",
+    # HDFC Balanced Advantage Fund aliases
+    "hdfc balanced advantage fund": "HDFC Balanced Advantage Fund Direct Growth",
+    "hdfc balanced advantage": "HDFC Balanced Advantage Fund Direct Growth",
+    "hdfc balanced fund": "HDFC Balanced Advantage Fund Direct Growth",
+}
+
 
 def _extract_scheme(question: str) -> str | None:
-    """Naive scheme name extraction from question text."""
+    """Extract scheme name from question, handling aliases."""
     q_lower = question.lower()
+    
+    # Check aliases first (more specific matches)
+    for alias, official in SCHEME_ALIASES.items():
+        if alias in q_lower:
+            return official
+    
+    # Fall back to known scheme names
     for scheme in KNOWN_SCHEMES:
-        # Match on distinctive parts of the scheme name
         key = scheme.lower().replace(" direct growth", "").replace(" direct plan growth", "")
         if key in q_lower:
             return scheme
