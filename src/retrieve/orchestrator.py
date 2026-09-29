@@ -77,6 +77,18 @@ def _build_query_with_history(
     if _extract_scheme(question):
         return question
 
+    # Don't enrich FAQ/procedural questions with history — they should
+    # match directly without conversation context diluting similarity
+    faq_keywords = [
+        "how to", "how do", "how can", "what is", "what are",
+        "download", "statement", "tax", "capital gain", "account",
+        "lock-in", "lock in", "exit load", "expense ratio", "sip",
+        "minimum", "benchmark", "rating", "aum", "fund size",
+    ]
+    q_lower = question.lower()
+    if any(kw in q_lower for kw in faq_keywords):
+        return question
+
     # Build a context string from recent history
     context_parts: list[str] = []
     for msg in history[-6:]:  # last 6 messages (3 turns)
