@@ -46,6 +46,12 @@ SCHEME_FACTS: dict[str, dict[str, str]] = {
         "Exit load": "1% if redeemed within 1 year",
         "Category": "Hybrid (Dynamic Asset Allocation)",
     },
+    "HDFC Mid Cap Fund Direct Growth": {
+        "Lock-in period": "None (open-ended scheme)",
+        "Exit load": "1% if redeemed within 1 year",
+        "Category": "Mid Cap",
+        "Benchmark": "NIFTY Midcap 150 Total Return Index (TRI)",
+    },
 }
 
 
