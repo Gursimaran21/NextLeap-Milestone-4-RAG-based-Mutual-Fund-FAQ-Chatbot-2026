@@ -125,6 +125,19 @@ Load → Chunk → Embed → Store → Retrieve → Generate → Cite
 | Guardrails | `src/retrieve/guardrails.py` | Block advice, PII, performance |
 | Generate | `src/retrieve/generate.py` | Grounded LLM answer + citation + fallback |
 
+## Sources
+
+The chatbot's knowledge base is built from these 6 public Groww scheme pages:
+
+| # | Scheme | Category | Source URL |
+|---|--------|----------|------------|
+| 1 | HDFC Large Cap Fund Direct Growth | Large Cap | [groww.in](https://groww.in/mutual-funds/hdfc-large-cap-fund-direct-growth) |
+| 2 | HDFC Equity Fund Direct Growth | Flexi Cap | [groww.in](https://groww.in/mutual-funds/hdfc-equity-fund-direct-growth) |
+| 3 | HDFC ELSS Tax Saver Fund Direct Plan Growth | ELSS | [groww.in](https://groww.in/mutual-funds/hdfc-elss-tax-saver-fund-direct-plan-growth) |
+| 4 | HDFC Small Cap Fund Direct Growth | Small Cap | [groww.in](https://groww.in/mutual-funds/hdfc-small-cap-fund-direct-growth) |
+| 5 | HDFC Balanced Advantage Fund Direct Growth | Hybrid | [groww.in](https://groww.in/mutual-funds/hdfc-balanced-advantage-fund-direct-growth) |
+| 6 | HDFC Mid Cap Fund Direct Growth | Mid Cap | [groww.in](https://groww.in/mutual-funds/hdfc-mid-cap-opportunities-fund-direct-growth) |
+
 ## Sample Questions
 
 **Factual (will answer):**
