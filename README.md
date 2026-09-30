@@ -133,6 +133,7 @@ Load → Chunk → Embed → Store → Retrieve → Generate → Cite
 - "What is the exit load on HDFC Top 100 Fund Direct Growth?"
 - "What is the minimum SIP amount for HDFC Flexi Cap Fund?"
 - "What is the benchmark index for HDFC Mid Cap Fund Direct Growth?"
+- "What is the risk rating of HDFC Balanced Advantage Fund?"
 
 **Procedural (FAQ):**
 - "How to download capital-gains statement?"
