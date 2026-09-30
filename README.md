@@ -153,6 +153,10 @@ Load → Chunk → Embed → Store → Retrieve → Generate → Cite
 - ChromaDB is local; the pre-built index is committed to the repo
 - Snapshots may become outdated; verify on official sources
 
+## Disclaimer
+
+> **Facts-only. No investment advice.** Answers are based on public scheme pages and may change. Verify on the official source before acting.
+
 ## License
 
 Demo/educational project.
