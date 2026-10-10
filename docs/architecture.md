@@ -186,7 +186,7 @@ sequenceDiagram
 ## 6. Suggested repository layout
 
 ```
-27-NextLeap-2026/
+NextLeap-Milestone-4-RAG-based-Mutual-Fund-FAQ-27-September-2026/
 ├── docs/
 │   ├── PRD.md
 │   ├── architecture.md      ← this file

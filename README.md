@@ -26,7 +26,7 @@ A **facts-only RAG chatbot** that answers factual questions about HDFC mutual fu
 ## Project Structure
 
 ```
-27-NextLeap-2026/
+NextLeap-Milestone-4-RAG-based-Mutual-Fund-FAQ-27-September-2026/
 ├── docs/                  # PRD, architecture, implementation guide
 ├── data/
 │   ├── sources.csv        # 6 HDFC scheme URLs
@@ -58,8 +58,8 @@ A **facts-only RAG chatbot** that answers factual questions about HDFC mutual fu
 ### 1. Clone and create virtual environment
 
 ```bash
-git clone https://github.com/Gursimaran21/RAG-based-Mutual-Fund-FAQ-Chatbot.git
-cd RAG-based-Mutual-Fund-FAQ-Chatbot
+git clone https://github.com/Gursimaran21/NextLeap-Milestone-4-RAG-based-Mutual-Fund-FAQ-Chatbot-2026.git NextLeap-Milestone-4-RAG-based-Mutual-Fund-FAQ-27-September-2026
+cd NextLeap-Milestone-4-RAG-based-Mutual-Fund-FAQ-27-September-2026
 python -m venv .venv
 .venv\Scripts\activate  # Windows
 # source .venv/bin/activate  # macOS/Linux
